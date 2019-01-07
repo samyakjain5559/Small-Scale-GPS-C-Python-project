@@ -1,0 +1,672 @@
+#include <iostream>
+#include <sstream>
+#include <string>
+#include <iomanip>
+#include "Rparser.h"
+
+using namespace std;
+Resistor *arrayResistor = NULL;//Global Resistor array initialized to NULL
+Node *arrayNode = NULL;//Global Node array initialized to NULL
+// Constructor: to define the default values
+Parser::Parser()
+{
+    letters = 0;
+    INSERT_WORD_PER_LINE =5;
+    MODIFY_WORD_PER_LINE = 3;
+    PRINT_WORD_PER_LINE = 2;
+    DELETE_WORD_PER_LINE =2;
+    NODE_WORD_PER_LINE =2;
+    numberOfWords = 0;
+    resistorIndex=0;
+    maxNodeNumber=0;
+    maxResistors=0;
+    newMaxNode =0;
+}
+
+bool Parser::input(string word)
+{
+    // Counts the number of letters in a string
+    for(int i =0; word[i]!='\0'; i++)
+        letters++;
+
+    // Copies the string into a new string called 'line'
+    size_t length = word.copy(line,letters,0);
+    line[length]='\0';
+    //adds a null character at the end of the string
+
+    stringstream linestream(line);
+    linestream>>command;
+//calls function insertR when the command is insertR
+    if(command == "insertR")
+    {
+        insertR(line);
+        return true;
+    }
+    //calls function modifyR when the command is modifyR
+    else if(command == "modifyR")
+    {
+        modifyR(line);
+        return true;
+    }
+//calls function printR when the command is printR
+    else if(command == "printR")
+    {
+        printR(line);
+        return true;
+    }
+//calls function printNode when the command is printNode
+    else if(command == "printNode")
+    {
+        printNode(line);
+        return true;
+    }
+//calls function deleteR when the command is deleteR
+    else if(command == "deleteR")
+    {
+        deleteR(line);
+        return true;
+    }
+//calls function maxVal when the command is maxVal
+    else if(command == "maxVal")
+    {
+        maxVal(line);
+        return true;
+    }
+    else
+    //gives an error when the command entered is not valid
+    {
+        cout<<"Error: invalid command"<<endl;
+        return false;
+    }
+}
+
+bool Parser::insertR(string line)
+{
+    //checks for the arguments, when command is insertR
+
+    numberOfWords = countWords(line);
+    // Counts number of words in a string
+    //checks a case when nothing is entered and gives an error invalid command
+    if(numberOfWords == 0)
+    {
+        cout<<"Error: invalid command"<<endl;
+        return false;
+    }
+
+    stringstream linestream(line); //makes a new stringstream as linestream
+    linestream>>command;//the first string is command
+
+    linestream>>name;//the second string is name
+
+    // Checks if the resistor name is "all"
+    // Returns out of the function if the condition is satisfied
+    if(name == "all")
+    {
+        cout<<"Error: resistor name cannot be the keyword \"all\"" <<endl;
+        return false;
+    }//gives an error when 'all' is entered as the string name
+
+    // Checks if enough arguments are not specified
+    else if(linestream.eof())
+    {
+        cout<<"Error: too few arguments"<<endl;
+        return false;
+    }
+
+    linestream>>resistance; // takes resistance as the next string
+
+    // Checks if the resistance entered is negative
+    if(resistance< 0)
+    {
+        cout<<"Error: negative resistance"<<endl;
+        return false;
+    }
+
+    // Checks if a number is not entered for the resistance
+    else if(linestream.fail())
+    {
+        cout<<"Error: invalid argument"<<endl;
+        return false;
+    }
+    else if(linestream.peek()!= ' ' && linestream.peek()!= '\t') // Checks if an integer is not entered for the node number
+    {
+        if(linestream.eof()) // Checks if more than enough arguments have been entered for the current commmand
+        {
+            cout<<"Error: too few arguments"<<endl;
+            return false;
+        }
+        else
+        {
+            cout<<"Error: invalid argument"<<endl;
+            return false;
+        }
+    }
+
+
+    linestream>>node1; // string node1 is entered here
+
+    if (linestream.eof())
+    {
+        cout<<"Error: too few arguments"<<endl;
+        return false;
+    }
+    // Checks if an integer is not entered for the node number
+    else if(linestream.fail())
+    {
+        cout<<"Error: invalid argument"<<endl;
+        return false;
+
+    }
+    else if(linestream.peek()!= ' ' && linestream.peek()!= '\t')
+    {
+        cout<<"Error: invalid argument"<<endl;
+        return false;
+    }
+    // Checks if the node number is within the range required
+    else if(node1 >maxNodeNumber)
+    {
+        cout<<"Error: node "<<node1<<" is out of permitted range "<<"0-"<<maxNodeNumber<<endl;
+        return false;
+    }
+    else if(node1 <0)
+    {
+        cout<<"Error: node "<<node1<<" is out of permitted range "<<"0-"<<maxNodeNumber<<endl;
+        return false;
+    }
+
+
+    linestream>>node2; //string node2 is entered here
+
+
+    if(linestream.fail() && linestream.eof())
+    {
+        cout<<"Error: invalid argument"<<endl;
+        return false;
+    }
+
+    else if(!linestream.eof())
+    {
+        if(linestream.peek() != ' ' && linestream.peek() != '\t')
+        {
+            cout<<"Error: invalid argument"<<endl;
+            return false;
+        }
+        else
+        {
+            // Checks if the two nodes have the same value
+            if(node1 == node2)
+            {
+                cout<<"Error: both terminals of resistor connect to node "<<node1<<endl;
+                return false;
+            }
+            else
+            {
+                string temp;
+                // Checks to make sure there are not more than enough arguments
+                if(linestream>>temp)
+                {
+                    cout<<"Error: too many arguments"<<endl;
+                    return false;
+                }
+            }
+        }
+    }
+    // Checks if the node is out of range
+    else if(node2 > maxNodeNumber)
+    {
+        cout<<"Error: node "<<node2<<" is out of permitted range "<<"0-"<<maxNodeNumber<<endl;
+        return false;
+    }
+    else if(node2 <0)
+    {
+        cout<<"Error: node "<<node2<<" is out of permitted range "<<"0-"<<maxNodeNumber<<endl;
+        return false;
+    }
+    else if(node1 == node2)
+    {
+        cout<<"Error: both terminals of resistor connect to node "<<node1<<endl;
+        return false;
+    }
+    if(resistorIndex == maxResistors)
+    {
+        cout<<"Error: resistor array is full"<<endl;
+        return false;
+    }
+
+    // Following three lines set the output of double to show two decimal places
+    cout.setf(ios::fixed);
+    cout.setf(ios::showpoint);
+    cout.precision(2);
+
+
+
+    if(node1 > maxNodeNumber)
+    {
+        cout<<"Error: node "<<node1<<" is out of permitted range "<<"0-"<<maxNodeNumber<<endl;
+        return false;
+    }
+    else if(node2 > maxNodeNumber)
+    {
+        cout<<"Error: node "<<node2<<" is out of permitted range "<<"0-"<<maxNodeNumber<<endl;
+        return false;
+    }
+
+    if(arrayNode[node1].addResistor(resistorIndex) && arrayNode[node2].addResistor(resistorIndex))
+    {
+        int *nodes; //makes a node array
+        nodes = new int;
+        nodes[0] = node1;
+        nodes[1] = node2;
+        Resistor temp (resistorIndex,name,resistance,nodes); // declares an object temp that passes all the values
+        arrayResistor[resistorIndex] = temp; // stores that value in the array
+        arrayNode[node1].Resnum(); //updates the counter when a specific node number is called
+        arrayNode[node2].Resnum();
+        resistorIndex++;
+        cout<<"Inserted: resistor "<<name <<" "<<resistance <<" Ohms "<< node1 <<" -> "<<node2<<endl;
+        delete nodes; // deletes the node array
+    }
+
+
+
+    return true;
+}
+
+bool Parser::modifyR(string line)
+{
+    //checks for the arguments, when command is modifyR
+    int i;
+    numberOfWords = countWords(line);
+    if(numberOfWords == 0)
+    {
+        cout<<"Error: invalid command"<<endl;
+        return false;
+    }
+
+    stringstream linestream(line);
+    linestream>>command;
+
+    linestream>>name;
+    if(name == "all")
+    {
+
+        cout<<"Error: resistor name cannot be the keyword \"all\"" <<endl;
+        return false;
+    }
+
+    else if(linestream.eof())
+    {
+        cout<<"Error: too few arguments"<<endl;
+
+        return false;
+    }
+    linestream>>resistance;
+
+
+    if(resistance< 0)
+    {
+        cout<<"Error: negative resistance"<<endl;
+        return false;
+    }
+
+    else if(linestream.fail())
+    {
+
+        cout<<"Error: invalid argument"<<endl;
+        return false;
+    }
+    else if(!linestream.eof())
+    {
+        if(linestream.peek() != ' ' && linestream.peek() != '\t')
+        {
+            cout<<"Error: invalid argument"<<endl;
+            return false;
+        }
+        else
+        {
+            string temp;
+            if(linestream>>temp)
+            {
+                cout<<"Error: too many arguments"<<endl;
+                return false;
+            }
+        }
+
+    }
+
+    cout.setf(ios::fixed);
+    cout.setf(ios::showpoint);
+    cout.precision(2);
+    for(i =0; i<resistorIndex; i++)
+    {
+        if(arrayResistor[i].getName() == name)
+        {
+            cout<<"Modified: resistor "<<name<<" from "<<arrayResistor[i].getResistance()<<" Ohms ";
+            arrayResistor[i].setResistance(resistance);
+            cout<<"to "<<resistance<<" Ohms"<<endl;
+            return true;
+        }
+
+    }
+
+    cout<<"Error: resistor "<<name<<" not found"<<endl;
+    return false;
+
+
+}
+
+bool Parser::printR(string line)
+{
+    //checks for the arguments, when command is printR
+    int i;
+    numberOfWords = countWords(line);
+    if(numberOfWords == 0)
+    {
+        cout<<"Error: invalid command"<<endl;
+        return false;
+    }
+    else if(numberOfWords > PRINT_WORD_PER_LINE)
+    {
+        cout<<"Error: too many arguments"<<endl;
+        return false;
+    }
+    else if(numberOfWords < PRINT_WORD_PER_LINE)
+    {
+        cout<<"Error: too few arguments"<<endl;
+        return false;
+
+    }
+    stringstream linestream(line);
+    linestream>>command;
+    linestream>>name;
+
+    if(linestream. fail())
+    {
+        return false;
+    }
+
+    else if(name=="all")
+    {
+        cout<<"Print: "<<endl; //prints all the resistors
+        for(i =0; i<resistorIndex; i++)
+        {
+
+            arrayResistor[i].print();
+
+        }
+        return true;
+    }
+    else
+    {
+
+        for(i =0; i<resistorIndex; i++)
+        {
+            if(arrayResistor[i].getName() == name)
+            {
+                cout<<"Print: "<<endl; // prints a specific resistor
+                arrayResistor[i].print();
+                return true;
+            }
+
+        }
+
+
+        cout<<"Error: resistor "<<name<<" not found"<<endl;
+        return false;
+
+
+
+
+    }
+}
+
+bool Parser::deleteR(string line)
+{
+    //checks for the arguments, when command is deleteR
+    numberOfWords = countWords(line);
+    if(numberOfWords == 0)
+    {
+        cout<<"Error: invalid command"<<endl;
+        return false;
+    }
+
+    else if(numberOfWords > PRINT_WORD_PER_LINE)
+    {
+        cout<<"Error: too many arguments"<<endl;
+        return false;
+    }
+    else if(numberOfWords < PRINT_WORD_PER_LINE)
+    {
+
+        cout<<"Error: too few arguments"<<endl;
+        return false;
+
+    }
+    stringstream linestream(line);
+    linestream>>command;
+    linestream>>name;
+
+    if(linestream. fail())
+    {
+        return false;
+    }
+
+    else if(name=="all")
+    {
+        // initializes everything to zero
+        int i;
+        Node delN;
+
+
+        Resistor del; // deletes the Node network
+        for(i=0; i<newMaxNode; i++)
+        {
+            arrayNode[i].deleteN();
+        }
+
+        delN.deleteN();
+        del.deleteR();
+        resistorIndex = 0;
+        cout<<"Deleted: all resistors"<<endl;
+
+    }
+    return true;
+}
+
+bool Parser::printNode(string line)
+{
+    // Prints either "all" nodes or a specific one
+    numberOfWords = countWords(line);
+    if(numberOfWords == 0)
+    {
+        cout<<"Error: invalid command"<<endl;
+        return false;
+    }
+    stringstream linestream(line);
+    linestream>>command;
+    linestream>>name;
+
+    if(name== "all")
+    {
+        string waste;
+        if(linestream>>waste)
+        {
+            cout<<"Error: too many arguments"<<endl;
+            return false;
+        }
+        else
+        {
+            cout<<"Print: "<<endl;
+            for(int i=0; i<newMaxNode; i++)
+            {
+                //prints all nodes
+
+                arrayNode[i].print(i);
+            }
+            return true;
+        }
+    }
+    else if(linestream.fail() && linestream.eof())
+    {
+        cout<<"Error: too few arguments"<<endl;
+        return false;
+    }
+    else
+    {
+        // New stringstream to check if an integer has been entered
+        stringstream checkForNumb(name);
+        checkForNumb>>node1;
+        //cout<<"Node: "<<node1<<endl;
+        if(checkForNumb.fail())
+        {
+            cout<<"Error: invalid argument"<<endl;
+            return false;
+        }
+        else if(!checkForNumb.eof())
+        {
+            cout<<"Error: invalid argument"<<endl;
+            return false;
+        }
+        else if(node1 > maxNodeNumber && maxNodeNumber!=0)
+        {
+            cout<<"Error: node "<<node1<<" is out of permitted range "<<"0-"<<maxNodeNumber<<endl;
+            return false;
+        }
+        else if(node1 < 0 && maxNodeNumber!=0)
+        {
+            cout<<"Error: node "<<node1<<" is out of permitted range "<<"0-"<<maxNodeNumber<<endl;
+            return false;
+        }
+        else
+        {
+
+            string temp;
+            if(linestream>>temp)
+            {
+                cout<<"Error: too many arguments"<<endl;
+                return false;
+            }
+            else
+            {
+                if(maxNodeNumber ==0)
+                {
+                    cout<<"Print: "<<endl;
+                    return true;
+                }
+                else
+                {
+                    //prints a specific node
+                    cout<<"Print: "<<endl;
+                    arrayNode[node1].print(node1);
+                    return true;
+                }
+
+
+            }
+        }
+    }
+    return true;
+}
+
+int Parser::countWords(string line)
+{
+    // Count the number of words in a string
+    string word;
+    count =0;
+    stringstream linestream(line);
+    while(linestream>>word)
+        count++;
+
+    return count;
+}
+
+bool Parser::maxVal(string line)
+{
+    //Function to check the validity of the command
+    //Only reaches the printing statements if no errors are encountered
+    if(maxNodeNumber!=0)
+    {
+        delete []arrayResistor; // deletes resistor array
+        delete []arrayNode; // deletes node array
+    }
+    resistorIndex = 0;
+    newMaxNode = 0;
+
+    // Returns true if it is the end of the line of the linestream or there are no other arguments present.
+    numberOfWords = countWords(line);
+    if(numberOfWords == 0)
+    {
+        cout<<"Error: invalid command"<<endl;
+        return false;
+    }
+    string waste;
+    stringstream linestream(line), extra(line);
+    linestream>>command;
+    extra>>waste;
+    if(!(linestream >> maxNodeNumber) || (!(linestream.peek() == ' ' || linestream.peek() == '\t' || linestream.eof()))) // Checks if an integer is not entered for the node number
+    {
+        cout << "Error: invalid argument" << endl;
+        return false;
+    }
+
+    if(maxNodeNumber <= 0)
+    {
+        cout << "Error: " << command << " arguments must be greater than 0" << endl;
+        return false;
+    }
+
+    if(linestream.eof() || !(extra >> waste))
+    {
+        cout << "Error: too few arguments" << endl;
+        return false;
+    }
+
+    if(!(linestream >> maxResistors) || (!(linestream.peek() == ' ' || linestream.peek() == '\t' || linestream.eof())))
+    {
+        cout << "Error: invalid argument" << endl;
+        return false;
+    }
+
+    if(!linestream.eof() && (!(linestream.peek() == ' ' || linestream.peek() == '\t'))) // Checks if an integer is not entered for the resistor number
+    {
+        cout << "Error: invalid argument" << endl;
+        return false;
+    }
+
+    if(maxResistors <= 0)
+    {
+        cout << "Error: " << command << " arguments must be greater than 0" << endl;
+        return false;
+    }
+
+    if(((linestream.peek() == ' ' || linestream.peek() == '\t')  && (linestream >> waste))) // Checks if more than enough arguments have been entered for the current commmand
+    {
+        cout << "Error: too many arguments" << endl;
+        return false;
+    }
+    arrayResistor = new Resistor [maxResistors];//initializes array of size max resistors
+    newMaxNode = maxNodeNumber + 1;
+    arrayNode = new Node[newMaxNode];
+
+    cout<<"New network: max node number is "<<maxNodeNumber << "; max resistors is "<<maxResistors <<endl;
+    return true;
+}
+
+void Rparser()
+{
+    Parser obj;
+    // Stores entire input line
+    string line;
+    cout<<"> ";
+    // Get a line from the input stream
+    getline(cin,line);
+    // Runs until an End of File (EOF) command is entered
+    while(!cin.eof())
+    {
+        obj.input(line);
+        cout<<"> ";
+        getline(cin,line);
+
+    }
+    delete []arrayResistor; // deletes resistor array
+    delete []arrayNode; // deletes node array
+}
