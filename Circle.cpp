@@ -4,7 +4,7 @@
 #include "Circle.h"
 using namespace std;
 
-
+// added
 // Constructor. First set up base class (Shape), then store the 
 // vertices, which are 3 (x,y) points giving offsets from the Shape center 
 // to each triangle vertex.
